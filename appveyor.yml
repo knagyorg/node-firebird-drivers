@@ -31,7 +31,7 @@ install:
   - cmd: yarn test
   - cmd: set ARTIFACTS_PATH=packages\node-firebird-native-api\build\Release
   - sh: sudo apt-get -y update
-  - sh: sudo apt-get -y install libtommath1 libtommath-dev libicu-dev zlib1g-dev
+  - sh: sudo apt-get -y install libtommath0 libicu
   - sh: wget -O Firebird-3.0.3.32900-0.amd64.tar.gz "https://github.com/FirebirdSQL/firebird/releases/download/R3_0_3/Firebird-3.0.3.32900-0.amd64.tar.gz"
   - sh: tar xzvf Firebird-3.0.3.32900-0.amd64.tar.gz
   - sh: (cd Firebird-3.0.3.32900-0.amd64; sudo ./install.sh -silent)
