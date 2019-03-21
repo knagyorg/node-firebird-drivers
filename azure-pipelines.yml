@@ -31,12 +31,12 @@ jobs:
   - script: |
       sg firebird -c "yarn"
       sg firebird -c "yarn bootstrap"
-      sg firebird -c "yarn test"
+      sg firebird -c "yarn test --ci --reporters=jest-junit --reporters=default"
     displayName: 'Build and test'
 
 - job: Windows
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'vs2015-win2012r2'
 
   strategy:
     matrix:
@@ -63,5 +63,5 @@ jobs:
       set PATH=C:\Firebird;%PATH%
       call yarn
       call yarn bootstrap
-      call yarn test
+      call yarn test --ci --reporters=jest-junit --reporters=default
     displayName: 'Build and test'
