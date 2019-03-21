@@ -48,12 +48,14 @@ jobs:
     inputs:
       versionSpec: $(node_version)
 
-  - powershell: Invoke-WebRequest -Uri "https://github.com/FirebirdSQL/firebird/releases/download/R3_0_3/Firebird-3.0.3.32900-0_x64.zip" -OutFile "C:\Temp\Firebird-3.0.3.32900-0_x64.zip"
+  - powershell: |
+      New-Item -ItemType Directory -Force -Path C:\Temp\FirebirdInstaller
+      Invoke-WebRequest -Uri "https://github.com/FirebirdSQL/firebird/releases/download/R3_0_3/Firebird-3.0.3.32900-0_x64.zip" -OutFile "C:\Temp\FirebirdInstaller\Firebird-3.0.3.32900-0_x64.zip"
     displayName: 'Download Firebird'
 
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: 'C:\Temp\Firebird-3.0.3.32900-0_x64.zip'
+      archiveFilePatterns: 'C:\Temp\FirebirdInstaller\Firebird-3.0.3.32900-0_x64.zip'
       destinationFolder: C:\Firebird
     displayName: 'Extract Firebird'
 
