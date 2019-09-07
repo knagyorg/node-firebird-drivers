@@ -39,7 +39,7 @@ jobs:
         yarn
         yarn bootstrap
 
-     - name: Test (Linux)
+    - name: Test (Linux)
       if: matrix.os == 'ubuntu-16.04'
       run: |
         sg firebird -c yarn test
