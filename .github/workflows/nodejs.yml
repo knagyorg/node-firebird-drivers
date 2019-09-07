@@ -33,7 +33,7 @@ jobs:
       run: |
         if "%PLATFORM%" == "x64" set FB_ZIP=Firebird-3.0.3.32900-0_x64.zip
         if "%PLATFORM%" == "x86" set FB_ZIP=Firebird-3.0.3.32900-0_Win32.zip
-        pwsh -command "& 'Start-FileDownload https://github.com/FirebirdSQL/firebird/releases/download/R3_0_3/$env:FB_ZIP'"
+        pwsh -command "& 'Invoke-WebRequest https://github.com/FirebirdSQL/firebird/releases/download/R3_0_3/$env:FB_ZIP -OutFile Firebird.zip'"
 
     - name: Build
       run: |
