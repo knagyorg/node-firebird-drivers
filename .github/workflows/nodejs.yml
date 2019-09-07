@@ -8,10 +8,8 @@ jobs:
 
     strategy:
       matrix:
-        #os: [ubuntu-latest, windows-latest, macOS-latest]
-        node-version: [8.x, 10.x, 12.x]
         os: [ubuntu-16.04, ubuntu-latest, windows-latest, macOS-latest]
-        #node-version: [8.x]
+        node-version: [8.x, 10.x, 12.x]
 
     steps:
     - uses: actions/checkout@v1
@@ -22,7 +20,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
 
     - name: Firebird install
-      if: ${{ matrix.os }} == 'ubuntu-16.04'
+      if: matrix.os == 'ubuntu-16.04'
       run: |
         sudo apt-get install libtommath0
         wget -O Firebird-3.0.3.32900-0.amd64.tar.gz "https://github.com/FirebirdSQL/firebird/releases/download/R3_0_3/Firebird-3.0.3.32900-0.amd64.tar.gz"
@@ -30,12 +28,15 @@ jobs:
         (cd Firebird-3.0.3.32900-0.amd64; sudo ./install.sh -silent)
         sudo usermod -a -G firebird `whoami`
 
-    - name: Build, and test
+    - name: Build and test
+      if: matrix.os == 'ubuntu-16.04'
       run: |
         sg firebird -c yarn
         sg firebird -c yarn bootstrap
-
-    - name: Test
-      if: ${{ matrix.os }} == 'ubuntu-16.04'
-      run: |
         sg firebird -c yarn test
+
+    - name: Build
+      if: matrix.os != 'ubuntu-16.04'
+      run: |
+        yarn
+        yarn bootstrap
