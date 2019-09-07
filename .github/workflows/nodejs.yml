@@ -30,9 +30,10 @@ jobs:
 
     - name: Firebird install (Windows)
       if: matrix.os == 'windows-latest'
-      cmd: if "%PLATFORM%" == "x64" set FB_ZIP=Firebird-3.0.3.32900-0_x64.zip
-      cmd: if "%PLATFORM%" == "x86" set FB_ZIP=Firebird-3.0.3.32900-0_Win32.zip
-      pwsh: Start-FileDownload "https://github.com/FirebirdSQL/firebird/releases/download/R3_0_3/$env:FB_ZIP"
+      run: |
+        if "%PLATFORM%" == "x64" set FB_ZIP=Firebird-3.0.3.32900-0_x64.zip
+        if "%PLATFORM%" == "x86" set FB_ZIP=Firebird-3.0.3.32900-0_Win32.zip
+        pwsh -command "& 'Start-FileDownload https://github.com/FirebirdSQL/firebird/releases/download/R3_0_3/$env:FB_ZIP"
 
     - name: Build
       run: |
