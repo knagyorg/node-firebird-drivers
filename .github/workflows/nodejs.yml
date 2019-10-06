@@ -31,9 +31,7 @@ jobs:
     - name: Firebird install (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        set
-        if "%PLATFORM%" == "x64" set FB_ZIP=Firebird-3.0.3.32900-0_x64.zip
-        if "%PLATFORM%" == "x86" set FB_ZIP=Firebird-3.0.3.32900-0_Win32.zip
+        set FB_ZIP=Firebird-3.0.3.32900-0_x64.zip
         echo %FB_ZIP%
         pwsh -command "& 'Invoke-WebRequest "https://github.com/FirebirdSQL/firebird/releases/download/R3_0_3/$env:FB_ZIP" -OutFile Firebird.zip'"
 
