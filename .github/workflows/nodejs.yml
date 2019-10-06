@@ -35,6 +35,9 @@ jobs:
       run: |
         wget -nv -O Firebird-3.0.4-33054-lipo-x86_64.pkg "https://github.com/FirebirdSQL/firebird/releases/download/R3_0_4/Firebird-3.0.4-33054-lipo-x86_64.pkg"
         sudo installer -verbose -pkg "Firebird-3.0.4-33054-lipo-x86_64.pkg" -target /
+        env
+        find /Library/Frameworks/Firebird.framework
+        ls -l /Library/Frameworks/Firebird.framework
 
     - name: Firebird install (Windows)
       if: matrix.os == 'windows-latest'
@@ -52,16 +55,14 @@ jobs:
     - name: Test (Linux)
       if: matrix.os == 'ubuntu-16.04'
       run: |
-        sg firebird -c yarn test
+        sg firebird -c "yarn test"
 
     - name: Test (MacOS)
       if: matrix.os == 'macOS-latest'
       run: |
-        env
-        find /Library/Frameworks/Firebird.framework
-        export FIREBIRD_HOME=/Library/Frameworks/Firebird.framework/Resources
-        export PATH=$PATH:$FIREBIRD_HOME/bin
-        export DYLD_LIBRARY_PATH=$FIREBIRD_HOME/bin:$FIREBIRD_HOME/lib:$DYLD_LIBRARY_PATH
+        export FIREBIRD_HOME=/Library/Frameworks/Firebird.framework/Versions/A
+        export PATH=$PATH:$FIREBIRD_HOME/Resources/bin
+        export DYLD_LIBRARY_PATH=$FIREBIRD_HOME/Libraries:$DYLD_LIBRARY_PATH
         yarn test
 
     - name: Test (Windows)
