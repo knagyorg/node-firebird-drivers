@@ -41,7 +41,7 @@ jobs:
       if: matrix.os == 'macOS-latest'
       run: |
         wget -O Firebird-3.0.4-33054-lipo-x86_64.pkg "https://github.com/FirebirdSQL/firebird/releases/download/R3_0_4/Firebird-3.0.4-33054-lipo-x86_64.pkg"
-        installer -verbose -pkg Firebird-3.0.4-33054-lipo-x86_64.pkg -target /
+        sudo installer -verbose -pkg "Firebird-3.0.4-33054-lipo-x86_64.pkg" -target /
 
     - name: Build
       shell: bash
