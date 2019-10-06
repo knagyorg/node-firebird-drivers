@@ -45,6 +45,7 @@ jobs:
         sudo mkdir /tmp-node-fb
         sudo chown -R `whoami`:firebird /tmp-node-fb
         sudo chmod 777 /tmp-node-fb
+        sudo chmod g+s /tmp-node-fb
         #sudo chmod -R 777 /tmp-node-fb
         #sudo chmod -R +ai /tmp-node-fb
         #sudo chown `whoami`:firebird $TMPDIR
