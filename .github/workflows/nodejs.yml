@@ -40,7 +40,7 @@ jobs:
         find /Library/Frameworks/Firebird.framework
         ls -l /Library/Frameworks/Firebird.framework
         sudo dseditgroup -o edit -a firebird -t `whoami` firebird
-        mkdir /tmp-node-fb
+        sudo mkdir /tmp-node-fb
         sudo chown `whoami`:firebird /tmp-node-fb
         sudo chmod 777 /tmp-node-fb
         #sudo chown `whoami`:firebird $TMPDIR
