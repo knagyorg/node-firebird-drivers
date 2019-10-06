@@ -57,6 +57,11 @@ jobs:
     - name: Test (MacOS)
       if: matrix.os == 'macOS-latest'
       run: |
+        env
+        find /Library/Frameworks/Firebird.framework
+        export FIREBIRD_HOME=/Library/Frameworks/Firebird.framework/Resources
+        export PATH=$PATH:$FIREBIRD_HOME/bin
+        export DYLD_LIBRARY_PATH=$FIREBIRD_HOME/bin:$FIREBIRD_HOME/lib:$DYLD_LIBRARY_PATH
         yarn test
 
     - name: Test (Windows)
