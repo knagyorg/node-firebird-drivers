@@ -21,7 +21,8 @@ describe('node-firebird-native-api', () => {
 
 		master = getMaster(getDefaultLibraryFilename());
 		dispatcher = master.getDispatcherSync()!;
-		tmpDir = tmp.mkdirSync({ mode: 0o777 }).path.toString();
+		//tmpDir = tmp.mkdirSync({ mode: 0o777 }).path.toString();
+		tmpDir = '/tmp-node-fb';
 
 		// Test premature shutdown prevention. 'master' variable should still be usable.
 		expect(disposeMaster(tempMaster)).toBe(true);
@@ -38,7 +39,7 @@ describe('node-firebird-native-api', () => {
 		status.disposeSync();
 
 		dispatcher.releaseSync();
-		fs.rmdirSync(tmpDir);
+		//fs.rmdirSync(tmpDir);
 		expect(disposeMaster(master)).toBe(true);
 		expect(disposeMaster(master)).toBe(false);
 	});
