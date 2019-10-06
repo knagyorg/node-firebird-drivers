@@ -38,14 +38,14 @@ jobs:
         wget -nv -O Firebird-3.0.4-33054-lipo-x86_64.pkg "https://github.com/FirebirdSQL/firebird/releases/download/R3_0_4/Firebird-3.0.4-33054-lipo-x86_64.pkg"
         sudo installer -verbose -pkg "Firebird-3.0.4-33054-lipo-x86_64.pkg" -target /
         sudo ln -s /Library/Frameworks/Firebird.framework/Versions/A/Firebird /usr/local/lib/libfbclient.dylib
-        env
-        find /Library/Frameworks/Firebird.framework
-        ls -l /Library/Frameworks/Firebird.framework
-        sudo dseditgroup -o edit -a firebird -t `whoami` firebird
+        #env
+        #find /Library/Frameworks/Firebird.framework
+        #ls -l /Library/Frameworks/Firebird.framework
+        #sudo dseditgroup -o edit -a firebird -t `whoami` firebird
         sudo mkdir /tmp-node-fb
         sudo chown -R `whoami`:firebird /tmp-node-fb
         sudo chmod 777 /tmp-node-fb
-        sudo chmod g+s /tmp-node-fb
+        #sudo chmod g+s /tmp-node-fb
         #sudo chmod -R 777 /tmp-node-fb
         #sudo chmod -R +ai /tmp-node-fb
         #sudo chown `whoami`:firebird $TMPDIR
@@ -81,9 +81,9 @@ jobs:
         export ISC_USER=sysdba
         export ISC_PASSWORD=masterkey
         export TMPDIR=/tmp-node-fb
-        export TEMP=$TMPDIR
-        export TMP=$TMPDIR
-        umask 000
+        #export TEMP=$TMPDIR
+        #export TMP=$TMPDIR
+        #umask 000
         yarn test
 
     - name: Test (Windows)

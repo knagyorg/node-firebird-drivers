@@ -1,5 +1,5 @@
 import * as fs from 'fs-extra-promise';
-//import * as tmp from 'temp-fs';
+import * as tmp from 'temp-fs';
 
 import { disposeMaster, getDefaultLibraryFilename, getMaster, Master, Provider, Util } from '../lib';
 import { XpbBuilder } from '../lib';
@@ -21,8 +21,10 @@ describe('node-firebird-native-api', () => {
 
 		master = getMaster(getDefaultLibraryFilename());
 		dispatcher = master.getDispatcherSync()!;
-		//tmpDir = tmp.mkdirSync({ mode: 0o777 }).path.toString();
-		tmpDir = '/tmp-node-fb';
+		tmpDir = tmp.mkdirSync().path.toString();
+
+		// Important for MacOS tests with non-embedded server.
+		fs.chmodSync(tmpDir, 0o777);
 
 		// Test premature shutdown prevention. 'master' variable should still be usable.
 		expect(disposeMaster(tempMaster)).toBe(true);
@@ -39,7 +41,7 @@ describe('node-firebird-native-api', () => {
 		status.disposeSync();
 
 		dispatcher.releaseSync();
-		//fs.rmdirSync(tmpDir);
+		fs.rmdirSync(tmpDir);
 		expect(disposeMaster(master)).toBe(true);
 		expect(disposeMaster(master)).toBe(false);
 	});
