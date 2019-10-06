@@ -42,8 +42,9 @@ jobs:
         sudo dseditgroup -o edit -a firebird -t `whoami` firebird
         sudo mkdir /tmp-node-fb
         sudo chown -R `whoami`:firebird /tmp-node-fb
-        sudo chmod -R 777 /tmp-node-fb
-        sudo chmod -R +ai /tmp-node-fb
+        sudo chmod 777 /tmp-node-fb
+        #sudo chmod -R 777 /tmp-node-fb
+        #sudo chmod -R +ai /tmp-node-fb
         #sudo chown `whoami`:firebird $TMPDIR
         #export FIREBIRD_HOME=/Library/Frameworks/Firebird.framework/Versions/A
         #export PATH=$PATH:$FIREBIRD_HOME/Resources/bin

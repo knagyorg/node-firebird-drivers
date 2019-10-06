@@ -28,7 +28,7 @@ export function runCommonTests(client: Client) {
 		jest.setTimeout(5000);
 
 		beforeAll(() => {
-			tmpDir = tmp.mkdirSync().path.toString();
+			tmpDir = tmp.mkdirSync({ mode: 0o777 }).path.toString();
 
 			client.defaultCreateDatabaseOptions = {
 				forcedWrite: false
