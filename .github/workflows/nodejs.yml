@@ -39,6 +39,7 @@ jobs:
         env
         find /Library/Frameworks/Firebird.framework
         ls -l /Library/Frameworks/Firebird.framework
+        sudo usermod -a -G firebird `whoami`
         #export FIREBIRD_HOME=/Library/Frameworks/Firebird.framework/Versions/A
         #export PATH=$PATH:$FIREBIRD_HOME/Resources/bin
         #echo "connect employee; select 1 from rdb$database; create user sysdba password 'masterkey';" | isql
