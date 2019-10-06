@@ -82,6 +82,7 @@ jobs:
         export TMPDIR=/tmp-node-fb
         export TEMP=$TMPDIR
         export TMP=$TMPDIR
+        umask 000
         yarn test
 
     - name: Test (Windows)
