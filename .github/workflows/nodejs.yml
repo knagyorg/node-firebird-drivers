@@ -10,7 +10,7 @@ jobs:
       matrix:
         #os: [ubuntu-16.04, ubuntu-latest, windows-latest, macOS-latest]
         #node-version: [8.x, 10.x, 12.x]
-        os: [macOS-latest]
+        os: [ubuntu-16.04, ubuntu-latest, windows-latest, macOS-latest]
         node-version: [8.x]
 
     steps:
@@ -76,5 +76,15 @@ jobs:
 
     - uses: actions/upload-artifact@master
       with:
+        name: node-firebird-native-api
+        path: packages/node-firebird-native-api
+
+    - uses: actions/upload-artifact@master
+      with:
         name: node-firebird-driver
         path: packages/node-firebird-driver
+
+    - uses: actions/upload-artifact@master
+      with:
+        name: node-firebird-driver-native
+        path: packages/node-firebird-driver-native
