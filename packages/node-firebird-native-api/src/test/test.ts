@@ -1,5 +1,5 @@
 import * as fs from 'fs-extra-promise';
-import * as tmp from 'temp-fs';
+//import * as tmp from 'temp-fs';
 
 import { disposeMaster, getDefaultLibraryFilename, getMaster, Master, Provider, Util } from '../lib';
 import { XpbBuilder } from '../lib';
