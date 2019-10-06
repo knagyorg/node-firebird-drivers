@@ -1,7 +1,7 @@
 import { Blob, Client, TransactionIsolation } from '../lib';
 
 import * as fs from 'fs-extra-promise';
-import * as tmp from 'temp-fs';
+//import * as tmp from 'temp-fs';
 
 
 export function runCommonTests(client: Client) {
@@ -28,7 +28,8 @@ export function runCommonTests(client: Client) {
 		jest.setTimeout(5000);
 
 		beforeAll(() => {
-			tmpDir = tmp.mkdirSync({ mode: 0o777 }).path.toString();
+			//tmpDir = tmp.mkdirSync({ mode: 0o777 }).path.toString();
+			tmpDir = '/tmp-node-fb';
 
 			client.defaultCreateDatabaseOptions = {
 				forcedWrite: false
@@ -37,7 +38,7 @@ export function runCommonTests(client: Client) {
 
 		afterAll(async () => {
 			await client.dispose();
-			fs.rmdirSync(tmpDir);
+			//fs.rmdirSync(tmpDir);
 		});
 
 		describe('Client', () => {
