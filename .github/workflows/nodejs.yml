@@ -34,12 +34,10 @@ jobs:
         set FB_ZIP=Firebird-3.0.3.32900-0_x64.zip
         powershell Invoke-WebRequest "https://github.com/FirebirdSQL/firebird/releases/download/R3_0_3/$env:FB_ZIP" -OutFile "$env:FB_ZIP"
         7z x -oC:\Firebird %FB_ZIP%
-        set PATH=C:\Firebird;%PATH%
-        set
-        dir C:\Firebird
 
     - name: Build
-      if: matrix.os != 'windows-latest'
+      #if: matrix.os != 'windows-latest'
+      shell: bash
       run: |
         yarn
         yarn bootstrap
@@ -53,6 +51,6 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: |
         set PATH=C:\Firebird;%PATH%
-        call yarn
-        call yarn bootstrap
+        REM call yarn
+        REM call yarn bootstrap
         call yarn test
