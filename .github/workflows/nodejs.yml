@@ -40,10 +40,10 @@ jobs:
         find /Library/Frameworks/Firebird.framework
         ls -l /Library/Frameworks/Firebird.framework
         sudo dseditgroup -o edit -a firebird -t `whoami` firebird
-        mkdir /tmp/node-fb
-        sudo chown `whoami`:firebird /tmp/node-fb /tmp
-        sudo chmod 777 /tmp/node-fb
-        sudo chown `whoami`:firebird $TMPDIR
+        mkdir /tmp-node-fb
+        sudo chown `whoami`:firebird /tmp-node-fb
+        sudo chmod 777 /tmp-node-fb
+        #sudo chown `whoami`:firebird $TMPDIR
         #export FIREBIRD_HOME=/Library/Frameworks/Firebird.framework/Versions/A
         #export PATH=$PATH:$FIREBIRD_HOME/Resources/bin
         #echo "connect employee; select 1 from rdb$database; create user sysdba password 'masterkey';" | isql
@@ -75,8 +75,9 @@ jobs:
         #export DYLD_LIBRARY_PATH=$FIREBIRD_HOME/Libraries:$DYLD_LIBRARY_PATH
         export ISC_USER=sysdba
         export ISC_PASSWORD=masterkey
-        #export TEMP=/tmp/node-fb
-        #export TMP=$TEMP
+        export TMPDIR=/tmp-node-fb
+        export TEMP=$TMPDIR
+        export TMP=$TMPDIR
         yarn test
 
     - name: Test (Windows)
