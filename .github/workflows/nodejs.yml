@@ -71,20 +71,20 @@ jobs:
         set PATH=C:\Firebird;%PATH%
         call yarn test
 
-    - name: Upload node-firebird-native-api ${{ matrix.os }}-${{ matrix.node-version }}
+    - name: Upload node-firebird-native-api-${{ matrix.os }}-nodejs-${{ matrix.node-version }}
       uses: actions/upload-artifact@master
       with:
-        name: node-firebird-native-api-${{ matrix.os }}-${{ matrix.node-version }}
+        name: node-firebird-native-api-${{ matrix.os }}-nodejs-${{ matrix.node-version }}
         path: packages/node-firebird-native-api
 
-    - name: Upload node-firebird-driver-${{ matrix.os }}-${{ matrix.node-version }}
+    - name: Upload node-firebird-driver-${{ matrix.os }}-nodejs-${{ matrix.node-version }}
       uses: actions/upload-artifact@master
       with:
-        name: node-firebird-driver-${{ matrix.os }}-${{ matrix.node-version }}
+        name: node-firebird-driver-${{ matrix.os }}-nodejs-${{ matrix.node-version }}
         path: packages/node-firebird-driver
 
-    - name: Upload node-firebird-driver-native
+    - name: Upload node-firebird-driver-native-${{ matrix.os }}-nodejs-${{ matrix.node-version }}
       uses: actions/upload-artifact@master
       with:
-        name: node-firebird-driver-native
+        name: node-firebird-driver-native-${{ matrix.os }}-nodejs-${{ matrix.node-version }}
         path: packages/node-firebird-driver-native
