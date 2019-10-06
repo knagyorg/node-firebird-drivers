@@ -70,7 +70,8 @@ jobs:
         #export DYLD_LIBRARY_PATH=$FIREBIRD_HOME/Libraries:$DYLD_LIBRARY_PATH
         export ISC_USER=sysdba
         export ISC_PASSWORD=masterkey
-        yarn test
+        #yarn test
+        sg firebird -c "yarn test"
 
     - name: Test (Windows)
       if: matrix.os == 'windows-latest'
