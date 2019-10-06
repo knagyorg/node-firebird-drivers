@@ -41,6 +41,7 @@ jobs:
         ls -l /Library/Frameworks/Firebird.framework
         export FIREBIRD_HOME=/Library/Frameworks/Firebird.framework/Versions/A
         export PATH=$PATH:$FIREBIRD_HOME/Resources/bin
+        echo "connect employee;" | isql
         echo "create or alter user sysdba password masterkey;" | isql -q /Library/Frameworks/Firebird.framework/Versions/A/Resources/security3.fdb
 
     - name: Firebird install (Windows)
