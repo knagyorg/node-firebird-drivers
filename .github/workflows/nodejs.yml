@@ -53,6 +53,6 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: |
         set PATH=C:\Firebird;%PATH%
-        yarn
-        yarn bootstrap
-        yarn test
+        call yarn
+        call yarn bootstrap
+        call yarn test
