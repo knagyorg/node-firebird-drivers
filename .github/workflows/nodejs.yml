@@ -38,21 +38,6 @@ jobs:
         wget -nv -O Firebird-3.0.4-33054-lipo-x86_64.pkg "https://github.com/FirebirdSQL/firebird/releases/download/R3_0_4/Firebird-3.0.4-33054-lipo-x86_64.pkg"
         sudo installer -verbose -pkg "Firebird-3.0.4-33054-lipo-x86_64.pkg" -target /
         sudo ln -s /Library/Frameworks/Firebird.framework/Versions/A/Firebird /usr/local/lib/libfbclient.dylib
-        #env
-        #find /Library/Frameworks/Firebird.framework
-        #ls -l /Library/Frameworks/Firebird.framework
-        #sudo dseditgroup -o edit -a firebird -t `whoami` firebird
-        sudo mkdir /tmp-node-fb
-        sudo chown -R `whoami`:firebird /tmp-node-fb
-        sudo chmod 777 /tmp-node-fb
-        #sudo chmod g+s /tmp-node-fb
-        #sudo chmod -R 777 /tmp-node-fb
-        #sudo chmod -R +ai /tmp-node-fb
-        #sudo chown `whoami`:firebird $TMPDIR
-        #export FIREBIRD_HOME=/Library/Frameworks/Firebird.framework/Versions/A
-        #export PATH=$PATH:$FIREBIRD_HOME/Resources/bin
-        #echo "connect employee; select 1 from rdb$database; create user sysdba password 'masterkey';" | isql
-        ##echo "create or alter user sysdba password masterkey;" | isql -q /Library/Frameworks/Firebird.framework/Versions/A/Resources/security3.fdb
 
     - name: Firebird install (Windows)
       if: matrix.os == 'windows-latest'
@@ -75,15 +60,12 @@ jobs:
     - name: Test (MacOS)
       if: matrix.os == 'macOS-latest'
       run: |
-        #export FIREBIRD_HOME=/Library/Frameworks/Firebird.framework/Versions/A
-        #export PATH=$PATH:$FIREBIRD_HOME/Resources/bin
-        #export DYLD_LIBRARY_PATH=$FIREBIRD_HOME/Libraries:$DYLD_LIBRARY_PATH
+        sudo mkdir /tmp-node-fb
+        #sudo chown -R `whoami`:firebird /tmp-node-fb
+        sudo chmod 777 /tmp-node-fb
         export ISC_USER=sysdba
         export ISC_PASSWORD=masterkey
         export TMPDIR=/tmp-node-fb
-        #export TEMP=$TMPDIR
-        #export TMP=$TMPDIR
-        #umask 000
         yarn test
 
     - name: Test (Windows)
@@ -91,3 +73,8 @@ jobs:
       run: |
         set PATH=C:\Firebird;%PATH%
         call yarn test
+
+    - uses: actions/upload-artifact@master
+      with:
+        name: node-firebird-driver
+        path: packages/node-firebird-driver
