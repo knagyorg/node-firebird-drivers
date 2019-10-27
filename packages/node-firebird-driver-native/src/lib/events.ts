@@ -27,7 +27,16 @@ export class EventsImpl extends AbstractEvents {
 				await callBack(counters);
 
 				if (events.eventsHandle)
+				{
+					const promise = new Promise(resolve => {
+						setTimeout(() => {
+							resolve();
+						}, 5000);
+					});
+
+					await promise;
 					await scheduleEvent();
+				}
 			});
 
 			if (events.eventsHandle) {

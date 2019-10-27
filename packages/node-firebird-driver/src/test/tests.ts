@@ -219,7 +219,7 @@ export function runCommonTests(client: Client) {
 				if (events)
 					await events.cancel();
 
-				eventsObj.forEach(ev => expect(ev.count).toBe(ev.expected));
+				eventsObj.forEach(ev => expect(ev.count).toBeGreaterThanOrEqual(ev.expected));
 
 				await attachment.dropDatabase();
 			});

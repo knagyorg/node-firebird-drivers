@@ -14,8 +14,10 @@ export abstract class AbstractEvents implements Events {
 
 		await this.internalCancel();
 
-		this.attachment!.events.delete(this);
-		this.attachment = undefined;
+		if (this.attachment) {
+			this.attachment!.events.delete(this);
+			this.attachment = undefined;
+		}
 	}
 
 	private check() {
