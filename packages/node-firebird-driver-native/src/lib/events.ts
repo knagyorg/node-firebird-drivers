@@ -22,15 +22,13 @@ export class EventsImpl extends AbstractEvents {
 
 		events.eventBlock = newEventBlock(names);
 
-		const internalCallBack = async (counters: [string, number][]) => {
-			await callBack(counters);
-
-			if (events.eventsHandle)
-				await scheduleEvent();
-		};
-
 		const scheduleEvent = async () => {
-			const eventCallback = createEventCallback(events.eventBlock, internalCallBack);
+			const eventCallback = createEventCallback(events.eventBlock, async counters => {
+				await callBack(counters);
+
+				if (events.eventsHandle)
+					await scheduleEvent();
+			});
 
 			if (events.eventsHandle) {
 				const { eventsHandle } = events;
