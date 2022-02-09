@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/asfernandes/node-firebird-drivers.svg?branch=master)](https://travis-ci.com/asfernandes/node-firebird-drivers) [![Build Status](https://ci.appveyor.com/api/projects/status/github/asfernandes/node-firebird-drivers?branch=master&svg=true)](https://ci.appveyor.com/project/asfernandes/node-firebird-drivers)
+[![CI](https://github.com/asfernandes/node-firebird-drivers/workflows/CI/badge.svg)](https://github.com/asfernandes/node-firebird-drivers/actions?query=workflow%3ACI)
 
 # Firebird drivers for Node.js / TypeScript
 
@@ -40,10 +40,6 @@ If `NODE_FB_TEST_HOST` is ommited, embedded server will be used.
 For remote server make sure to specify `NODE_FB_TEST_TMP_DIR`.
 
 For local server or embedded, if `NODE_FB_TEST_TMP_DIR` is ommited a temporary directory will be created.
-
-# MacOS
-
-If the error `Cannot load Firebird client library: 'libfbclient.dylib'` appears in MacOS, you may fix it creating a symlink with `sudo ln -s /Library/Frameworks/Firebird.framework/Versions/A/Firebird /usr/local/lib/libfbclient.dylib`.
 
 # Donation
 

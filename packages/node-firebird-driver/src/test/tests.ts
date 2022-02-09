@@ -1,4 +1,10 @@
-import { Blob, Client, TransactionIsolation } from '../lib';
+import {
+	Blob,
+	Client,
+	TransactionIsolation,
+	ZonedDate,
+	ZonedDateEx
+} from '../lib';
 
 import * as fs from 'fs-extra-promise';
 import * as tmp from 'temp-fs';
@@ -9,15 +15,34 @@ require('dotenv').config({ path: '../../.env' });
 
 export function runCommonTests(client: Client) {
 	function dateToString(d: Date) {
-		return d && `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+		return d && `${(d.getFullYear() + '').padStart(4, '0')}-${d.getMonth() + 1}-${d.getDate()}`;
 	}
 
 	function timeToString(d: Date) {
 		return d && `${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}.${d.getMilliseconds()}`;
 	}
 
+	function timeTzToString(zd: ZonedDateEx) {
+		if (!zd)
+			return null;
+
+		const d = new Date(zd.date.getTime() + (zd.offset * 60 * 1000));
+
+		return `time '${d.getUTCHours()}:${d.getUTCMinutes()}:${d.getUTCSeconds()}.${d.getUTCMilliseconds()} ${zd.timeZone}'`;
+	}
+
 	function dateTimeToString(d: Date) {
 		return d && `${dateToString(d)} ${timeToString(d)}`;
+	}
+
+	function dateTimeTzToString(zd: ZonedDateEx) {
+		if (!zd)
+			return null;
+
+		const d = new Date(zd.date.getTime() + (zd.offset * 60 * 1000));
+
+		return `timestamp '${(d.getUTCFullYear() + '').padStart(4, '0')}-${d.getUTCMonth() + 1}-${d.getUTCDate()} ` +
+			`${d.getUTCHours()}:${d.getUTCMinutes()}:${d.getUTCSeconds()}.${d.getUTCMilliseconds()} ${zd.timeZone}'`;
 	}
 
 
@@ -49,6 +74,8 @@ export function runCommonTests(client: Client) {
 
 
 		beforeAll(() => {
+			expect(client.isValid).toBeTruthy();
+
 			if (isLocal() && !testConfig.tmpDir) {
 				testConfig.tmpDir = tmp.mkdirSync().path.toString();
 
@@ -74,6 +101,8 @@ export function runCommonTests(client: Client) {
 		afterAll(async () => {
 			await client.dispose();
 
+			expect(client.isValid).toBeFalsy();
+
 			if (isLocal())
 				fs.rmdirSync(testConfig.tmpDir!);
 		});
@@ -89,8 +118,14 @@ export function runCommonTests(client: Client) {
 				const attachment1 = await client.createDatabase(filename);
 				const attachment2 = await client.connect(filename);
 
+				expect(attachment1.isValid).toBeTruthy();
+				expect(attachment2.isValid).toBeTruthy();
+
 				await attachment2.disconnect();
 				await attachment1.dropDatabase();
+
+				expect(attachment1.isValid).toBeFalsy();
+				expect(attachment2.isValid).toBeFalsy();
 			});
 		});
 
@@ -101,16 +136,22 @@ export function runCommonTests(client: Client) {
 				const isolationQuery = 'select rdb$get_context(\'SYSTEM\', \'ISOLATION_LEVEL\') from rdb$database';
 
 				const transaction1 = await attachment.startTransaction();
-				expect((await attachment.executeReturning(transaction1, isolationQuery))[0]).toBe('SNAPSHOT');
+				expect(transaction1.isValid).toBeTruthy()
+				expect((await attachment.executeSingleton(transaction1, isolationQuery))[0]).toBe('SNAPSHOT');
 				await transaction1.commit();
+				expect(transaction1.isValid).toBeFalsy()
 
 				const transaction2 = await attachment.startTransaction({ isolation: TransactionIsolation.READ_COMMITTED });
-				expect((await attachment.executeReturning(transaction2, isolationQuery))[0]).toBe('READ COMMITTED');
+				expect(transaction2.isValid).toBeTruthy()
+				expect((await attachment.executeSingleton(transaction2, isolationQuery))[0]).toBe('READ COMMITTED');
 				await transaction2.commit();
+				expect(transaction2.isValid).toBeFalsy()
 
 				const transaction3 = await attachment.startTransaction({ isolation: TransactionIsolation.CONSISTENCY });
-				expect((await attachment.executeReturning(transaction3, isolationQuery))[0]).toBe('CONSISTENCY');
+				expect(transaction3.isValid).toBeTruthy()
+				expect((await attachment.executeSingleton(transaction3, isolationQuery))[0]).toBe('CONSISTENCY');
 				await transaction3.commit();
+				expect(transaction3.isValid).toBeFalsy()
 
 				await attachment.dropDatabase();
 			});
@@ -120,7 +161,9 @@ export function runCommonTests(client: Client) {
 				const transaction = await attachment.startTransaction();
 
 				const statement = await attachment.prepare(transaction, 'create table t1 (n1 integer)');
+				expect(statement.isValid).toBeTruthy();
 				await statement.dispose();
+				expect(statement.isValid).toBeFalsy();
 
 				let error: Error | undefined;
 				try {
@@ -164,7 +207,39 @@ export function runCommonTests(client: Client) {
 				await transaction.commitRetaining();
 
 				const resultSet = await attachment.executeQuery(transaction, 'select n1 from t1');
+				expect(resultSet.isValid).toBeTruthy();
 				await resultSet.close();
+				expect(resultSet.isValid).toBeFalsy();
+
+				await transaction.commit();
+				await attachment.dropDatabase();
+			});
+
+			test('#executeSingleton()', async () => {
+				const attachment = await client.createDatabase(getTempFile('Attachment-executeSingleton.fdb'));
+				const transaction = await attachment.startTransaction();
+
+				await attachment.execute(transaction, 'create table t1 (n1 integer)');
+				await transaction.commitRetaining();
+
+				const result = await attachment.executeSingleton(transaction, 'insert into t1 values (11) returning n1');
+				expect(result.length).toBe(1);
+				expect(result[0]).toBe(11);
+
+				await transaction.commit();
+				await attachment.dropDatabase();
+			});
+
+			test('#executeSingletonAsObject()', async () => {
+				const attachment = await client.createDatabase(getTempFile('Attachment-executeSingletonAsObject.fdb'));
+				const transaction = await attachment.startTransaction();
+
+				await attachment.execute(transaction, 'create table t1 (n1 integer)');
+				await transaction.commitRetaining();
+
+				const output = await attachment.executeSingletonAsObject<{ N1: number }>(transaction,
+					'insert into t1 values (11) returning n1');
+				expect(output.N1).toBe(11);
 
 				await transaction.commit();
 				await attachment.dropDatabase();
@@ -235,6 +310,7 @@ export function runCommonTests(client: Client) {
 					if (Array.from(eventsMap.values()).every(obj => obj.count >= obj.expected)) {
 						if (events) {
 							await events.cancel();
+							expect(events.isValid).toBeFalsy();
 							events = null!;
 						}
 					}
@@ -260,10 +336,12 @@ export function runCommonTests(client: Client) {
 						// Commit retaining to test internal event rescheduling
 						// after each handler dispatch.
 						await transaction.commitRetaining();
+						expect(transaction.isValid).toBeTruthy();
 					}
 				}
 				finally {
 					await transaction.commit();
+					expect(transaction.isValid).toBeFalsy();
 				}
 
 				await Promise.all(eventsObj.map(ev => ev.promise));
@@ -325,9 +403,21 @@ export function runCommonTests(client: Client) {
 				await statement1.dispose();
 				await transaction.commitRetaining();
 
-				const statement2 = await attachment.prepare(transaction, 'insert into t1 (n1) values (1)');
-				await statement2.execute(transaction);
+				const statement2 = await attachment.prepare(transaction, 'insert into t1 (n1) values (?)');
+				await statement2.execute(transaction, [1]);
+				await statement2.execute(transaction, [null]);
+				await statement2.execute(transaction, [10]);
+				await statement2.execute(transaction, [100]);
+				expect(statement2.isValid).toBeTruthy();
 				await statement2.dispose();
+				expect(statement2.isValid).toBeFalsy();
+
+				const rs = await attachment.executeQuery(transaction,
+					`select sum(n1) || ', ' || count(n1) || ', ' || count(*) ret from t1`);
+				const ret = await rs.fetchAsObject<{ RET: string }>();
+				await rs.close();
+
+				expect(ret[0].RET).toStrictEqual('111, 3, 4');
 
 				await transaction.commit();
 				await attachment.dropDatabase();
@@ -346,6 +436,26 @@ export function runCommonTests(client: Client) {
 				const resultSet2 = await statement2.executeQuery(transaction);
 				await resultSet2.close();
 				await statement2.dispose();
+
+				await transaction.commit();
+				await attachment.dropDatabase();
+			});
+
+			test('#executeSingleton()', async () => {
+				const attachment = await client.createDatabase(getTempFile('Attachment-executeSingleton.fdb'));
+				const transaction = await attachment.startTransaction();
+
+				await attachment.execute(transaction, 'create table t1 (n1 integer)');
+				await transaction.commitRetaining();
+
+				const statement = await attachment.prepare(transaction, 'insert into t1 values (11) returning n1, n1 * 2');
+
+				const result = await statement.executeSingleton(transaction);
+				expect(result.length).toBe(2);
+				expect(result[0]).toBe(11);
+				expect(result[1]).toBe(11 * 2);
+
+				await statement.dispose();
 
 				await transaction.commit();
 				await attachment.dropDatabase();
@@ -388,11 +498,51 @@ export function runCommonTests(client: Client) {
 				await transaction.commit();
 				await attachment.dropDatabase();
 			});
+
+			test('#hasResultSet()', async () => {
+				const attachment = await client.createDatabase(getTempFile('Statement-hasResultSet.fdb'));
+				const transaction = await attachment.startTransaction();
+
+				const statement1 = await attachment.prepare(transaction, 'create table t1 (n1 integer)');
+				expect(statement1.hasResultSet).toBe(false);
+				await statement1.execute(transaction);
+				await statement1.dispose();
+
+				await transaction.commitRetaining();
+
+				const statement2 = await attachment.prepare(transaction, 'insert into t1 values (1)');
+				expect(statement2.hasResultSet).toBe(false);
+				await statement2.dispose();
+
+				const statement3 = await attachment.prepare(transaction, 'insert into t1 values (1) returning *');
+				expect(statement3.hasResultSet).toBe(false);
+				await statement3.dispose();
+
+				const statement4 = await attachment.prepare(transaction, 'execute block as begin end');
+				expect(statement4.hasResultSet).toBe(false);
+				await statement4.dispose();
+
+				const statement5 = await attachment.prepare(transaction, 'select * from t1');
+				expect(statement5.hasResultSet).toBe(true);
+				await statement5.dispose();
+
+				const statement6 = await attachment.prepare(transaction, 'execute block returns (n integer) as begin suspend; end');
+				expect(statement6.hasResultSet).toBe(true);
+				await statement6.dispose();
+
+				const statement7 = await attachment.prepare(transaction, 'execute block returns (n integer) as begin end');
+				expect(statement7.hasResultSet).toBe(true);
+				await statement7.dispose();
+
+				await transaction.commit();
+				await attachment.dropDatabase();
+			});
 		});
 
 		describe('ResultSet', () => {
 			test('#fetch()', async () => {
 				const attachment = await client.createDatabase(getTempFile('ResultSet-fetch.fdb'));
+
 				let transaction = await attachment.startTransaction();
 
 				const blobBuffer = Buffer.alloc(11, '12345678á9');
@@ -403,10 +553,42 @@ export function runCommonTests(client: Client) {
 					{ name: 'x_int_scale', type: 'numeric(5, 2)', valToStr: (v: any) => v },
 					{ name: 'x_bigint', type: 'bigint', valToStr: (v: any) => v },
 					{ name: 'x_bigint_scale', type: 'numeric(15, 2)', valToStr: (v: any) => v },
+					{ name: 'x_int128', type: 'int128', valToStr: (v: any) => v },
+					{ name: 'x_int128_scale', type: 'numeric(20, 2)', valToStr: (v: any) => v },
+					{ name: 'x_dec16', type: 'decfloat(16)', valToStr: (v: any) => v },
+					{ name: 'x_dec34', type: 'decfloat(34)', valToStr: (v: any) => v },
 					{ name: 'x_double', type: 'double precision', valToStr: (v: any) => v },
-					{ name: 'x_date', type: 'date', valToStr: (v: any) => `date '${dateToString(v)}'` },
+					{ name: 'x_date1', type: 'date', valToStr: (v: any) => `date '${dateToString(v)}'` },
+					{ name: 'x_date2', type: 'date', valToStr: (v: any) => `date '${dateToString(v)}'` },
+					{ name: 'x_date3', type: 'date', valToStr: (v: any) => `date '${dateToString(v)}'` },
 					{ name: 'x_time', type: 'time', valToStr: (v: any) => `time '${timeToString(v)}'` },
-					{ name: 'x_timestamp', type: 'timestamp', valToStr: (v: any) => `timestamp '${dateTimeToString(v)}'` },
+					{
+						name: 'x_time_tz1',
+						type: 'time with time zone',
+						valToStr: (v: ZonedDate) =>
+							`${timeTzToString({ date: v.date, timeZone: 'GMT', offset: 0 })} at time zone '${v.timeZone}'`
+					},
+					{
+						name: 'x_time_tz2',
+						type: 'time with time zone',
+						valToStr: (v: ZonedDate) =>
+							`${timeTzToString({ date: v.date, timeZone: 'GMT', offset: 0 })} at time zone '${v.timeZone}'`
+					},
+					{ name: 'x_timestamp1', type: 'timestamp', valToStr: (v: any) => `timestamp '${dateTimeToString(v)}'` },
+					{ name: 'x_timestamp2', type: 'timestamp', valToStr: (v: any) => `timestamp '${dateTimeToString(v)}'` },
+					{ name: 'x_timestamp3', type: 'timestamp', valToStr: (v: any) => `timestamp '${dateTimeToString(v)}'` },
+					{
+						name: 'x_timestamp_tz1',
+						type: 'timestamp with time zone',
+						valToStr: (v: ZonedDate) =>
+							`${dateTimeTzToString({ date: v.date, timeZone: 'GMT', offset: 0 })} at time zone '${v.timeZone}'`
+					},
+					{
+						name: 'x_timestamp_tz2',
+						type: 'timestamp with time zone',
+						valToStr: (v: ZonedDate) =>
+							`${dateTimeTzToString({ date: v.date, timeZone: 'GMT', offset: 0 })} at time zone '${v.timeZone}'`
+					},
 					{ name: 'x_boolean', type: 'boolean', valToStr: (v: any) => v },
 					{ name: 'x_varchar', type: 'varchar(10) character set utf8', valToStr: (v: any) => `'${v}'` },
 					{ name: 'x_char', type: 'char(10) character set utf8', valToStr: (v: any) => `'${v}'` },
@@ -421,7 +603,6 @@ export function runCommonTests(client: Client) {
 				await transaction.commitRetaining();
 
 				const recordCount = 5;
-				const now = new Date();
 				let parameters: any[];
 
 				{	// scope
@@ -433,8 +614,11 @@ export function runCommonTests(client: Client) {
 					transaction = await attachment.startTransaction();
 
 					const blob = await attachment.createBlob(transaction);
+					expect(blob.isValid).toBeTruthy();
 					await blob.write(blobBuffer);
+					expect(blob.isValid).toBeTruthy();
 					await blob.close();
+					expect(blob.isValid).toBeFalsy();
 
 					parameters = [
 						-1,
@@ -442,10 +626,28 @@ export function runCommonTests(client: Client) {
 						-3.45,
 						-2,
 						-3.45,
+						'-45699999999999999999999999999999999876',
+						'-45699999999999999999999999999999999.87',
+						'-456999999999876',
+						'-456999999999999999999999999999.87',
 						-4.567,
 						new Date(2017, 3 - 1, 26),
-						new Date(now.getFullYear(), now.getMonth(), now.getDate(), 11, 56, 32, 123),
+						new Date(new Date(2000, 3 - 1, 26).setFullYear(50)),
+						new Date(9999, 3 - 1, 26),
+						new Date(2020, 1 - 1, 1, 11, 56, 32, 123),
+						{
+							date: new Date(Date.UTC(2020, 1 - 1, 1, 11, 56, 32, 123)),
+							timeZone: 'America/New_York'
+						} as ZonedDate,
+						{
+							date: new Date(Date.UTC(2020, 1 - 1, 1, 11, 56, 32, 123)),
+							timeZone: 'America/Sao_Paulo'
+						} as ZonedDate,
 						new Date(2017, 3 - 1, 26, 11, 56, 32, 123),
+						new Date(new Date(2000, 3 - 1, 26, 11, 56, 32, 123).setFullYear(50)),
+						new Date(9999, 3 - 1, 26, 11, 56, 32, 123),
+						{ date: new Date(Date.UTC(2021, 6 - 1, 7, 11, 56, 32, 123)), timeZone: 'America/New_York' } as ZonedDate,
+						{ date: new Date(Date.UTC(2021, 6 - 1, 7, 11, 56, 32, 123)), timeZone: 'America/Sao_Paulo' } as ZonedDate,
 						true,
 						'123áé4567',
 						'123áé4567',
@@ -476,10 +678,22 @@ export function runCommonTests(client: Client) {
 							x_int_scale,
 							x_bigint,
 							x_bigint_scale,
+							x_int128,
+							x_int128_scale,
+							x_dec16,
+							x_dec34,
 							x_double,
-							x_date,
+							x_date1,
+							x_date2,
+							x_date3,
 							x_time,
-							x_timestamp,
+							x_time_tz1,
+							x_time_tz2,
+							x_timestamp1,
+							x_timestamp2,
+							x_timestamp3,
+							x_timestamp_tz1,
+							x_timestamp_tz2,
 							x_boolean,
 							x_varchar,
 							char_length(x_varchar),
@@ -504,10 +718,22 @@ export function runCommonTests(client: Client) {
 					expect(columns[n++]).toBe(-3.45);
 					expect(columns[n++]).toBe(-2);
 					expect(columns[n++]).toBe(-3.45);
+					expect(columns[n++]).toBe('-45699999999999999999999999999999999876');
+					expect(columns[n++]).toBe('-45699999999999999999999999999999999.87');
+					expect(columns[n++]).toBe('-456999999999876');
+					expect(columns[n++]).toBe('-456999999999999999999999999999.87');
 					expect(columns[n++]).toBe(-4.567);
 					expect(dateTimeToString(columns[n++])).toBe('2017-3-26 0:0:0.0');
+					expect(dateTimeToString(columns[n++])).toBe('0050-3-26 0:0:0.0');
+					expect(dateTimeToString(columns[n++])).toBe('9999-3-26 0:0:0.0');
 					expect(timeToString(columns[n++])).toBe('11:56:32.123');
+					expect(timeTzToString(columns[n++])).toBe(`time '6:56:32.123 America/New_York'`);
+					expect(timeTzToString(columns[n++])).toBe(`time '8:56:32.123 America/Sao_Paulo'`);
 					expect(dateTimeToString(columns[n++])).toBe('2017-3-26 11:56:32.123');
+					expect(dateTimeToString(columns[n++])).toBe('0050-3-26 11:56:32.123');
+					expect(dateTimeToString(columns[n++])).toBe('9999-3-26 11:56:32.123');
+					expect(dateTimeTzToString(columns[n++])).toBe(`timestamp '2021-6-7 7:56:32.123 America/New_York'`);
+					expect(dateTimeTzToString(columns[n++])).toBe(`timestamp '2021-6-7 8:56:32.123 America/Sao_Paulo'`);
 					expect(columns[n++]).toBe(true);
 					expect(columns[n++]).toBe('123áé4567');
 					expect(columns[n++]).toBe(9);
@@ -520,6 +746,7 @@ export function runCommonTests(client: Client) {
 
 					for (const i = n + 2; n < i; ++n) {
 						const blob = columns[n] as Blob;
+						expect(blob.isValid).toBeTruthy();
 						const blobStream = await attachment.openBlob(transaction, blob);
 						const buffer = Buffer.alloc(await blobStream.length);
 						expect(await blobStream.read(buffer)).toBe(buffer.length);

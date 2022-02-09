@@ -9,6 +9,9 @@ export interface Client {
 	/** Creates a database. */
 	createDatabase(uri: string, options?: CreateDatabaseOptions): Promise<Attachment>;
 
+	/** True if the client has not been disposed. */
+	readonly isValid: boolean;
+
 	/** Default connect options. */
 	defaultConnectOptions?: ConnectOptions;
 
@@ -121,13 +124,33 @@ export interface Attachment {
 		}): Promise<void>;
 
 	/** Executes a statement that returns a single record as [col1, col2, ..., colN]. */
-	executeReturning(transaction: Transaction, sqlStmt: string, parameters?: any[],
+	executeSingleton(transaction: Transaction, sqlStmt: string, parameters?: any[],
 		options?: {
 			prepareOptions?: PrepareOptions,
 			executeOptions?: ExecuteOptions
 		}): Promise<any[]>;
 
 	/** Executes a statement that returns a single record as an object. */
+	executeSingletonAsObject<T extends object>(transaction: Transaction, sqlStmt: string, parameters?: any[],
+		options?: {
+			prepareOptions?: PrepareOptions,
+			executeOptions?: ExecuteOptions
+		}): Promise<T>;
+
+	/**
+	 * Executes a statement that returns a single record as [col1, col2, ..., colN].
+	 * @deprecated since version 2.4.0 and will be removed in next major version. Replaced by executeSingleton.
+	 */
+	executeReturning(transaction: Transaction, sqlStmt: string, parameters?: any[],
+		options?: {
+			prepareOptions?: PrepareOptions,
+			executeOptions?: ExecuteOptions
+		}): Promise<any[]>;
+
+	/**
+	 * Executes a statement that returns a single record as an object.
+	 * @deprecated since version 2.4.0 and will be removed in next major version. Replaced by executeSingletonAsObject.
+	 */
 	executeReturningAsObject<T extends object>(transaction: Transaction, sqlStmt: string, parameters?: any[],
 		options?: {
 			prepareOptions?: PrepareOptions,
@@ -142,6 +165,9 @@ export interface Attachment {
 		}): Promise<ResultSet>;
 
 	queueEvents(names: string[], callBack: (counters: [string, number][]) => Promise<void>): Promise<Events>;
+
+	/** True if the attachment is connected. */
+	readonly isValid: boolean;
 
 	/** Default transaction options. */
 	defaultTransactionOptions?: TransactionOptions;
@@ -172,6 +198,9 @@ export interface Transaction {
 
 	/** Rollbacks and maintains this transaction object for subsequent work. */
 	rollbackRetaining(): Promise<void>;
+
+	/** True if the transaction is active. */
+	readonly isValid: boolean;
 }
 
 /** Statement interface. */
@@ -186,17 +215,44 @@ export interface Statement {
 	execute(transaction: Transaction, parameters?: any[], options?: ExecuteOptions): Promise<void>;
 
 	/** Executes a statement that returns a single record as [col1, col2, ..., colN]. */
-	executeReturning(transaction: Transaction, parameters?: any[], executeOptions?: ExecuteOptions): Promise<any[]>;
+	executeSingleton(transaction: Transaction, parameters?: any[], executeOptions?: ExecuteOptions): Promise<any[]>;
 
 	/** Executes a statement that returns a single record as an object. */
+	executeSingletonAsObject<T extends object>(transaction: Transaction, parameters?: any[], executeOptions?: ExecuteOptions): Promise<T>;
+
+	/**
+	 * Executes a statement that returns a single record as [col1, col2, ..., colN].
+	 * @deprecated since version 2.4.0 and will be removed in next major version. Replaced by executeSingleton.
+	 */
+	executeReturning(transaction: Transaction, parameters?: any[], executeOptions?: ExecuteOptions): Promise<any[]>;
+
+	/**
+	 * Executes a statement that returns a single record as an object.
+	 * @deprecated since version 2.4.0 and will be removed in next major version. Replaced by executeSingletonAsObject.
+	 */
 	executeReturningAsObject<T extends object>(transaction: Transaction, parameters?: any[],
 		options?: ExecuteOptions): Promise<T>;
 
 	/** Executes a prepared statement that has result set. */
 	executeQuery(transaction: Transaction, parameters?: any[], options?: ExecuteQueryOptions): Promise<ResultSet>;
 
+	/**
+	 * Set cursor name of a SELECT ... FOR UPDATE statement.
+	 *
+	 * Use with ResultSet.fetch({ fetchSize: 1 }) and other statement with WHERE CURRENT OF <cursorName>.
+	 */
+	setCursorName(cursorName: string): Promise<void>;
+
+	getExecPathText(): Promise<string | undefined>;
+
+	/** True if the statement has not been disposed. */
+	readonly isValid: boolean;
+
 	/** Gets the query's result columns labels. Returns empty array for queries without result. */
 	readonly columnLabels: Promise<string[]>;
+
+	/** When true, query result must be obtained with method executeQuery. */
+	readonly hasResultSet: boolean;
 
 	/** Default query's execute options. */
 	defaultExecuteOptions?: ExecuteOptions;
@@ -232,12 +288,18 @@ export interface ResultSet {
 	 */
 	fetchAsObject<T extends object>(options?: FetchOptions): Promise<T[]>;
 
+	/** True if the ResultSet is open. */
+	readonly isValid: boolean;
+
 	/** Default result set's fetch options. */
 	defaultFetchOptions?: FetchOptions;
 }
 
 export interface Events {
 	cancel(): Promise<void>;
+
+	/** True if the events' attachment is valid. */
+	readonly isValid: boolean;
 }
 
 /** Blob class. */
@@ -252,6 +314,11 @@ export class Blob {
 		this.attachment = attachment;
 		this.id.set(id);
 	}
+
+	/** True if the blob's attachment is valid. */
+	get isValid(): boolean {
+		return this.attachment.isValid;
+	}
 }
 
 /** BlobStream class. */
@@ -260,7 +327,7 @@ export abstract class BlobStream {
 	readonly blob: Blob;
 
 	/** Gets the blob's stream length in bytes.  */
-	readonly length: Promise<number>;
+	abstract get length(): Promise<number>;
 
 	protected constructor(blob: Blob) {
 		this.blob = blob;
@@ -280,4 +347,18 @@ export abstract class BlobStream {
 
 	/** Writes data to the blob. */
 	abstract write(buffer: Buffer): Promise<void>;
+
+	/** True if the blob stream is open. */
+	abstract get isValid(): boolean;
+}
+
+/** TIME WITH TIME ZONE and TIMESTAMP WITH TIME ZONE to be sent as parameter */
+export interface ZonedDate {
+	date: Date;
+	timeZone: string;
+}
+
+/** TIME WITH TIME ZONE and TIMESTAMP WITH TIME ZONE returned by Firebird */
+export interface ZonedDateEx extends ZonedDate {
+	offset: number;
 }

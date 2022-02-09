@@ -79,12 +79,16 @@ export abstract class AbstractResultSet implements ResultSet {
 		});
 	}
 
+	get isValid(): boolean {
+		return !!this.statement;
+	}
+
 	private check() {
-		if (!this.statement)
+		if (!this.isValid)
 			throw new Error('ResultSet is already closed.');
 	}
 
-	protected abstract async internalClose(): Promise<void>;
+	protected abstract internalClose(): Promise<void>;
 
-	protected abstract async internalFetch(options?: FetchOptions): Promise<{ finished: boolean; rows: any[][] }>;
+	protected abstract internalFetch(options?: FetchOptions): Promise<{ finished: boolean; rows: any[][] }>;
 }

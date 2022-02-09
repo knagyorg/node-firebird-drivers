@@ -42,13 +42,17 @@ export abstract class AbstractTransaction implements Transaction {
 		return await this.internalRollbackRetaining();
 	}
 
+	get isValid(): boolean {
+		return !!this.attachment;
+	}
+
 	private check() {
-		if (!this.attachment)
+		if (!this.isValid)
 			throw new Error('Transaction is already committed or rolled back.');
 	}
 
-	protected abstract async internalCommit(): Promise<void>;
-	protected abstract async internalCommitRetaining(): Promise<void>;
-	protected abstract async internalRollback(): Promise<void>;
-	protected abstract async internalRollbackRetaining(): Promise<void>;
+	protected abstract internalCommit(): Promise<void>;
+	protected abstract internalCommitRetaining(): Promise<void>;
+	protected abstract internalRollback(): Promise<void>;
+	protected abstract internalRollbackRetaining(): Promise<void>;
 }
