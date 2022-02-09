@@ -14,8 +14,13 @@ import {
 export abstract class AbstractStatement implements Statement {
 	resultSet?: AbstractResultSet;
 
+	abstract getExecPathText(): Promise<string | undefined>;
+
 	/** Gets the query's result columns labels. Returns empty array for queries without result. */
-	readonly columnLabels: Promise<string[]>;
+	abstract get columnLabels(): Promise<string[]>
+
+	/** When true, query result must be obtained with method executeQuery. */
+	readonly hasResultSet: boolean;
 
 	/** Default query's execute options. */
 	defaultExecuteOptions: ExecuteOptions;
@@ -60,7 +65,7 @@ export abstract class AbstractStatement implements Statement {
 	}
 
 	/** Executes a statement that returns a single record as [col1, col2, ..., colN]. */
-	async executeReturning(transaction: AbstractTransaction, parameters?: any[], options?: ExecuteOptions): Promise<any[]> {
+	async executeSingleton(transaction: AbstractTransaction, parameters?: any[], options?: ExecuteOptions): Promise<any[]> {
 		this.check();
 
 		//// TODO: check opened resultSet.
@@ -69,11 +74,11 @@ export abstract class AbstractStatement implements Statement {
 	}
 
 	/** Executes a statement that returns a single record as an object. */
-	async executeReturningAsObject<T extends object>(transaction: AbstractTransaction, parameters?: any[],
+	async executeSingletonAsObject<T extends object>(transaction: AbstractTransaction, parameters?: any[],
 			options?: ExecuteOptions): Promise<T> {
 		this.check();
 
-		const row = await this.executeReturning(transaction, parameters, options);
+		const row = await this.executeSingleton(transaction, parameters, options);
 		const cols = (await this?.columnLabels) || [];
 
 		const obj = {} as T;
@@ -85,6 +90,17 @@ export abstract class AbstractStatement implements Statement {
 		});
 
 		return obj;
+	}
+
+	/** Executes a statement that returns a single record as [col1, col2, ..., colN]. */
+	async executeReturning(transaction: AbstractTransaction, parameters?: any[], options?: ExecuteOptions): Promise<any[]> {
+		return await this.executeSingleton(transaction, parameters, options);
+	}
+
+	/** Executes a statement that returns a single record as an object. */
+	async executeReturningAsObject<T extends object>(transaction: AbstractTransaction, parameters?: any[],
+			options?: ExecuteOptions): Promise<T> {
+		return await this.executeSingletonAsObject<T>(transaction, parameters, options);
 	}
 
 	/** Executes a prepared statement that has result set. */
@@ -99,15 +115,21 @@ export abstract class AbstractStatement implements Statement {
 		return resultSet;
 	}
 
+	get isValid(): boolean {
+		return !!this.attachment;
+	}
+
 	private check() {
-		if (!this.attachment)
+		if (!this.isValid)
 			throw new Error('Statement is already disposed.');
 	}
 
-	protected abstract async internalDispose(): Promise<void>;
-	protected abstract async internalExecuteTransaction(transaction: AbstractTransaction): Promise<AbstractTransaction>;
-	protected abstract async internalExecute(transaction: AbstractTransaction, parameters?: any[], options?: ExecuteOptions):
+	public abstract setCursorName(cursorName: string): Promise<void>;
+
+	protected abstract internalDispose(): Promise<void>;
+	protected abstract internalExecuteTransaction(transaction: AbstractTransaction): Promise<AbstractTransaction>;
+	protected abstract internalExecute(transaction: AbstractTransaction, parameters?: any[], options?: ExecuteOptions):
 		Promise<any[]>;
-	protected abstract async internalExecuteQuery(transaction: AbstractTransaction, parameters?: any[], options?: ExecuteQueryOptions):
+	protected abstract internalExecuteQuery(transaction: AbstractTransaction, parameters?: any[], options?: ExecuteQueryOptions):
 		Promise<AbstractResultSet>;
 }

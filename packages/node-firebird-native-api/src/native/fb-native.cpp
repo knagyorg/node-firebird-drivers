@@ -1,6 +1,5 @@
 #include <atomic>
 #include <functional>
-#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -21,7 +20,6 @@
 using std::atomic;
 using std::function;
 using std::lock_guard;
-using std::map;
 using std::mutex;
 using std::string;
 using std::unique_ptr;
@@ -46,8 +44,8 @@ static Napi::Object initAll(Napi::Env env, Napi::Object exports);
 //----------------------------------------------------------------------------
 
 
-static map<Master*, Handle> masterHandles;
-static map<Handle, unsigned> handleCounters;
+static unordered_map<Master*, Handle> masterHandles;
+static unordered_map<Handle, unsigned> handleCounters;
 
 
 //----------------------------------------------------------------------------
@@ -147,7 +145,14 @@ static Napi::Value getMaster(const Napi::CallbackInfo& info)
 		}
 	}
 	else
+	{
+		const char* errorMsg = dlerror();
+
 		errorMessage = string("Cannot load Firebird client library: '") + str + "'.";
+
+		if (errorMsg)
+			errorMessage += string("\n- ") + errorMsg;
+	}
 #endif
 
 	if (!errorMessage.empty())
@@ -384,26 +389,34 @@ namespace
 				Napi::HandleScope scope(env);
 
 				auto counters = Napi::Array::New(env);
-				auto index = 0u;
 
-				auto i = self->resultBuffer.cbegin();
-				assert(self->resultBuffer.size() > 0 && *i == 1);	// version
-				++i;
+				{   // scope
+					lock_guard<mutex> lockGuard(self->mtx);
+					auto index = 0u;
 
-				while (i < self->resultBuffer.end())
-				{
-					const auto nameLen = *i++;
-					const auto name = string((const char*) &i[0], (const char*) &i[nameLen]);
-					i += nameLen;
-					const auto count = i[0] | (i[1] << 8) | (i[2] << 16) | (i[3] << 24);
-					i += 4;
+					auto i = self->resultBuffer.cbegin();
 
-					auto item = Napi::Array::New(env, 2);
-					item[0u] = Napi::String::New(env, name.c_str());
-					item[1u] = Napi::Number::New(env, count - self->map[name]);
-					counters[index++] = item;
+					// version
+					assert(self->resultBuffer.size() > 0);
+					assert(*i == 1);
 
-					self->map[name] = count;
+					++i;
+
+					while (i < self->resultBuffer.end())
+					{
+						const auto nameLen = *i++;
+						const auto name = string((const char*) &i[0], (const char*) &i[nameLen]);
+						i += nameLen;
+						const auto count = i[0] | (i[1] << 8) | (i[2] << 16) | (i[3] << 24);
+						i += 4;
+
+						auto item = Napi::Array::New(env, 2);
+						item[0u] = Napi::String::New(env, name.c_str());
+						item[1u] = Napi::Number::New(env, count - self->map[name]);
+						counters[index++] = item;
+
+						self->map[name] = count;
+					}
 				}
 
 				jsFunc.Call({counters});

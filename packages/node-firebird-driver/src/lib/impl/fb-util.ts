@@ -6,6 +6,7 @@ import * as stringDecoder from 'string_decoder';
 import { AbstractAttachment } from './attachment';
 import { AbstractTransaction } from './transaction';
 import { decodeDate, decodeTime, encodeDate, encodeTime } from './date-time';
+import { tzIdToString, tzStringToId } from './time-zones';
 
 import {
 	Attachment,
@@ -15,7 +16,9 @@ import {
 	CreateDatabaseOptions,
 	Transaction,
 	TransactionIsolation,
-	TransactionOptions
+	TransactionOptions,
+	ZonedDate,
+	ZonedDateEx
 } from '..';
 
 
@@ -35,6 +38,13 @@ export namespace sqlTypes {
 	export const SQL_TYPE_TIME = 560;
 	export const SQL_TYPE_DATE = 570;
 	export const SQL_INT64 = 580;
+	export const SQL_TIMESTAMP_TZ_EX = 32748;
+	export const SQL_TIME_TZ_EX = 32750;
+	export const SQL_TIMESTAMP_TZ = 32754;
+	export const SQL_TIME_TZ = 32756;
+	export const SQL_INT128 = 32752;
+	export const SQL_DEC16 = 32760;
+	export const SQL_DEC34 = 32762;
 	export const SQL_BOOLEAN = 32764;
 	export const SQL_NULL = 32766;
 }
@@ -81,6 +91,25 @@ export namespace epb {
 /** Blob info. */
 export namespace blobInfo {
 	export const totalLength = 6;
+}
+
+/** Statement info. */
+export namespace statementInfo {
+	export const sqlExecPathBlrText = 32;
+}
+
+/** Common info. */
+export namespace commonInfo {
+	export const end = 1;
+	export const truncated = 2;
+	export const error = 3;
+	export const dataNotReady = 4;
+	export const length = 126;
+	export const flagEnd = 127;
+}
+
+export namespace charSets {
+	export const ascii = 2;
 }
 
 export function createDpb(options?: ConnectOptions | CreateDatabaseOptions): Buffer {
@@ -262,16 +291,71 @@ export function createDataReader(descriptors: Descriptor[]): DataReader {
 						decodedTime.hours, decodedTime.minutes, decodedTime.seconds, decodedTime.fractions / 10);
 				}
 
+				case sqlTypes.SQL_TIME_TZ_EX: {
+					const now = new Date();
+					const decodedTime = decodeTime(dataView.getUint32(descriptor.offset, littleEndian));
+					const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),
+						decodedTime.hours, decodedTime.minutes, decodedTime.seconds, decodedTime.fractions / 10));
+					const timeZone = tzIdToString(dataView.getUint16(descriptor.offset + 4, littleEndian));
+					const offset = dataView.getInt16(descriptor.offset + 6, littleEndian);
+
+					return {
+						date,
+						timeZone,
+						offset
+					} as ZonedDateEx;
+				}
+
 				case sqlTypes.SQL_TYPE_DATE: {
 					const decodedDate = decodeDate(dataView.getInt32(descriptor.offset, littleEndian));
-					return new Date(decodedDate.year, decodedDate.month - 1, decodedDate.day);
+
+					if (decodedDate.year >= 100)
+						return new Date(decodedDate.year, decodedDate.month - 1, decodedDate.day);
+					else {
+						const date = new Date(2000, decodedDate.month - 1, decodedDate.day);
+						date.setFullYear(decodedDate.year);
+						return date;
+					}
 				}
 
 				case sqlTypes.SQL_TIMESTAMP: {
 					const decodedDate = decodeDate(dataView.getInt32(descriptor.offset, littleEndian));
 					const decodedTime = decodeTime(dataView.getUint32(descriptor.offset + 4, littleEndian));
-					return new Date(decodedDate.year, decodedDate.month - 1, decodedDate.day,
-						decodedTime.hours, decodedTime.minutes, decodedTime.seconds, decodedTime.fractions / 10);
+
+					if (decodedDate.year >= 100) {
+						return new Date(decodedDate.year, decodedDate.month - 1, decodedDate.day,
+							decodedTime.hours, decodedTime.minutes, decodedTime.seconds, decodedTime.fractions / 10);
+					}
+					else {
+						const date = new Date(2000, decodedDate.month - 1, decodedDate.day,
+							decodedTime.hours, decodedTime.minutes, decodedTime.seconds, decodedTime.fractions / 10);
+						date.setFullYear(decodedDate.year);
+						return date;
+					}
+				}
+
+				case sqlTypes.SQL_TIMESTAMP_TZ_EX: {
+					const decodedDate = decodeDate(dataView.getInt32(descriptor.offset, littleEndian));
+					const decodedTime = decodeTime(dataView.getUint32(descriptor.offset + 4, littleEndian));
+					const timeZone = tzIdToString(dataView.getUint16(descriptor.offset + 8, littleEndian));
+					const offset = dataView.getInt16(descriptor.offset + 10, littleEndian);
+					let date: Date;
+
+					if (decodedDate.year >= 100) {
+						date = new Date(Date.UTC(decodedDate.year, decodedDate.month - 1, decodedDate.day,
+							decodedTime.hours, decodedTime.minutes, decodedTime.seconds, decodedTime.fractions / 10));
+					}
+					else {
+						date = new Date(Date.UTC(2000, decodedDate.month - 1, decodedDate.day,
+							decodedTime.hours, decodedTime.minutes, decodedTime.seconds, decodedTime.fractions / 10));
+						date.setUTCFullYear(decodedDate.year);
+					}
+
+					return {
+						date,
+						timeZone,
+						offset
+					} as ZonedDateEx;
 				}
 
 				case sqlTypes.SQL_BOOLEAN:
@@ -313,6 +397,8 @@ export function createDataWriter(descriptors: Descriptor[]): DataWriter {
 				dataView.setInt16(descriptor.nullOffset, -1, littleEndian);
 				return;
 			}
+
+			dataView.setInt16(descriptor.nullOffset, 0, littleEndian);
 
 			switch (descriptor.type) {
 				// SQL_TEXT is handled changing its descriptor to SQL_VARYING with IMetadataBuilder.
@@ -364,6 +450,17 @@ export function createDataWriter(descriptors: Descriptor[]): DataWriter {
 					break;
 				}
 
+				case sqlTypes.SQL_TIME_TZ:
+				case sqlTypes.SQL_TIME_TZ_EX: {
+					const zonedDate = value as ZonedDate;
+					dataView.setUint32(descriptor.offset,
+						encodeTime(zonedDate.date.getUTCHours(), zonedDate.date.getUTCMinutes(), zonedDate.date.getUTCSeconds(),
+							zonedDate.date.getUTCMilliseconds() * 10),
+						littleEndian);
+					dataView.setUint16(descriptor.offset + 4, tzStringToId(zonedDate.timeZone), littleEndian);
+					break;
+				}
+
 				case sqlTypes.SQL_TYPE_DATE: {
 					const date = value as Date;
 					dataView.setInt32(descriptor.offset,
@@ -380,6 +477,20 @@ export function createDataWriter(descriptors: Descriptor[]): DataWriter {
 					dataView.setUint32(descriptor.offset + 4,
 						encodeTime(date.getHours(), date.getMinutes(), date.getSeconds(), date.getMilliseconds() * 10),
 						littleEndian);
+					break;
+				}
+
+				case sqlTypes.SQL_TIMESTAMP_TZ:
+				case sqlTypes.SQL_TIMESTAMP_TZ_EX: {
+					const zonedDate = value as ZonedDate;
+					dataView.setInt32(descriptor.offset,
+						encodeDate(zonedDate.date.getUTCFullYear(), zonedDate.date.getUTCMonth() + 1, zonedDate.date.getUTCDate()),
+						littleEndian);
+					dataView.setUint32(descriptor.offset + 4,
+						encodeTime(zonedDate.date.getUTCHours(), zonedDate.date.getUTCMinutes(), zonedDate.date.getUTCSeconds(),
+							zonedDate.date.getUTCMilliseconds() * 10),
+						littleEndian);
+					dataView.setUint16(descriptor.offset + 8, tzStringToId(zonedDate.timeZone), littleEndian);
 					break;
 				}
 
