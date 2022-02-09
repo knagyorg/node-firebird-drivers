@@ -4680,6 +4680,23 @@ node-fetch@^2.6.1, node-fetch@^2.6.7:
   dependencies:
     whatwg-url "^5.0.0"
 
+node-firebird-driver@^2.4.0:
+  version "2.4.0"
+  resolved "https://registry.yarnpkg.com/node-firebird-driver/-/node-firebird-driver-2.4.0.tgz#9282543d7112c5357dc479c55a0ed5f86b6900d7"
+  integrity sha512-FsCvgG78l+dtnlVzRO9bvOHXalffcNIdph9YIDAO4k7wLi07mRwFcstS3IIOo4ENqGFkC5+ka9BuFLwRErGslw==
+  dependencies:
+    "@types/node" "^17.0.10"
+
+node-firebird-native-api@^2.1.4:
+  version "2.1.4"
+  resolved "https://registry.yarnpkg.com/node-firebird-native-api/-/node-firebird-native-api-2.1.4.tgz#4724028eb9c2ed9ec3c16401bde6978882ee8b0f"
+  integrity sha512-aBENclBu5HSAKqgd/GtZOZM+07O8jViXqg+XGYUdG4tOtz/9Z8yM5sICqjobsTzWUddip4VHTQSTkFqG+QKX5g==
+  dependencies:
+    "@types/node" "^17.0.10"
+    bindings "^1.5.0"
+    node-addon-api "^4.3.0"
+    node-gyp "^8.4.1"
+
 node-gyp@^5.0.2:
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/node-gyp/-/node-gyp-5.1.1.tgz#eb915f7b631c937d282e33aed44cb7a025f62a3e"
