@@ -1,6 +1,6 @@
 {
   "name": "@knagyorg/node-firebird-driver-native",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "Firebird Native Driver for Node.js",
   "main": "dist/lib/index.js",
   "scripts": {
