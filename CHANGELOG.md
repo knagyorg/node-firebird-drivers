@@ -1,3 +1,17 @@
+## March, 1, 2023
+
+### driver, driver-native - 3.1.0
+
+* Feature [#136](https://github.com/asfernandes/node-firebird-drivers/pull/136) - Add method for query cancellation.
+
+## December, 15, 2022
+
+### driver, driver-native, native-api - 3.0.0
+
+* Feature [#130](https://github.com/asfernandes/node-firebird-drivers/issues/130) - Add options to Attachment.createBlob for stream blob creation.
+* Feature [#131](https://github.com/asfernandes/node-firebird-drivers/issues/131) - Add method BlobStream.seek.
+* Feature [#133](https://github.com/asfernandes/node-firebird-drivers/issues/133) - Update target code to ES2020 (node.js 14 compatible).
+
 ## January, 26, 2022
 
 ### driver, driver-native - 2.4.0
@@ -6,7 +20,7 @@
 * Feature [#119](https://github.com/asfernandes/node-firebird-drivers/pull/119) - Implementation of isValid property.
 * Feature [#121](https://github.com/asfernandes/node-firebird-drivers/issues/121) - Deprecate methods executeReturning* replacing by executeSingleton*.
 
-### native-api
+### native-api - 2.1.4
 
 * Feature [#114](https://github.com/asfernandes/node-firebird-drivers/issues/114) - Add support for Visual Studio 2022 build.
 

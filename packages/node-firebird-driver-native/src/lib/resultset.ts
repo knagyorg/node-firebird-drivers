@@ -1,10 +1,10 @@
 import { StatementImpl } from './statement';
 import { TransactionImpl } from './transaction';
 
-import { ExecuteQueryOptions, FetchOptions } from 'node-firebird-driver';
-import { AbstractResultSet } from 'node-firebird-driver/dist/lib/impl';
+import { ExecuteQueryOptions, FetchOptions } from '@knagyorg/node-firebird-driver';
+import { AbstractResultSet } from '@knagyorg/node-firebird-driver/dist/lib/impl';
 
-import * as fb from 'node-firebird-native-api';
+import * as fb from '@knagyorg/node-firebird-native-api';
 
 
 /** ResultSet implementation. */

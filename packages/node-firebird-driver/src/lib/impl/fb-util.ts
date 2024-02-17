@@ -13,6 +13,7 @@ import {
 	Blob,
 	BlobStream,
 	ConnectOptions,
+	CreateBlobOptions,
 	CreateDatabaseOptions,
 	Transaction,
 	TransactionIsolation,
@@ -81,6 +82,25 @@ export namespace tpb {
 	/* tslint:enable */
 }
 
+/** BPB constants. */
+export namespace bpb {
+	/* tslint:disable */
+	export const version1 = 1;
+	export const source_type = 1;
+	export const target_type = 2;
+	export const type = 3;
+	export const source_interp = 4;
+	export const target_interp = 5;
+	export const filter_parameter = 6;
+	export const storage = 7;
+
+	export const type_segmented = 0x0;
+	export const type_stream = 0x1;
+	export const storage_main = 0x0;
+	export const storage_temp = 0x2;
+	/* tslint:enable */
+}
+
 /** EPB constants. */
 export namespace epb {
 	/* tslint:disable */
@@ -106,6 +126,13 @@ export namespace commonInfo {
 	export const dataNotReady = 4;
 	export const length = 126;
 	export const flagEnd = 127;
+}
+
+export namespace cancelType {
+	export const disable = 1;
+	export const enable = 2;
+	export const raise = 3;
+	export const abort = 4;
 }
 
 export namespace charSets {
@@ -196,6 +223,26 @@ export function createTpb(options?: TransactionOptions): Buffer {
 
 	if (options.autoCommit)
 		ret += code(tpb.autocommit);
+
+	return Buffer.from(ret);
+}
+
+export function createBpb(options?: CreateBlobOptions): Buffer {
+	const code = (c: number) => String.fromCharCode(c);
+	let ret = code(bpb.version1);
+
+	if (!options)
+		options = {};
+
+	switch (options.type) {
+		case 'SEGMENTED':
+			ret += `${code(bpb.type)}${code(1)}${code(bpb.type_segmented)}`;
+			break;
+
+		case 'STREAM':
+			ret += `${code(bpb.type)}${code(1)}${code(bpb.type_stream)}`;
+			break;
+	}
 
 	return Buffer.from(ret);
 }

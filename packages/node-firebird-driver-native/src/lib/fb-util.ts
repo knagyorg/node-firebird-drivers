@@ -1,7 +1,7 @@
-import { charSets, sqlTypes, Descriptor } from 'node-firebird-driver/dist/lib/impl';
-export * from 'node-firebird-driver/dist/lib/impl';
+import { charSets, sqlTypes, Descriptor } from '@knagyorg/node-firebird-driver/dist/lib/impl';
+export * from '@knagyorg/node-firebird-driver/dist/lib/impl';
 
-import * as fb from 'node-firebird-native-api';
+import * as fb from '@knagyorg/node-firebird-native-api';
 
 
 /** Fix metadata descriptors to types we want to read. */

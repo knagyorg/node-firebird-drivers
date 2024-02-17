@@ -1,3 +1,3 @@
 export { createNativeClient, getDefaultLibraryFilename } from './client';
 
-export * from 'node-firebird-driver';
+export * from '@knagyorg/node-firebird-driver';

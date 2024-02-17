@@ -1,8 +1,8 @@
 import { AttachmentImpl } from './attachment';
 
-import { AbstractEvents } from 'node-firebird-driver/dist/lib/impl';
+import { AbstractEvents } from '@knagyorg/node-firebird-driver/dist/lib/impl';
 
-import * as fb from 'node-firebird-native-api';
+import * as fb from '@knagyorg/node-firebird-native-api';
 
 
 /** Events implementation. */

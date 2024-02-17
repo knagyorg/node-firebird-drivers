@@ -1,10 +1,10 @@
 import { AttachmentImpl } from './attachment';
 import { createTpb } from './fb-util';
 
-import { TransactionOptions } from 'node-firebird-driver';
-import { AbstractTransaction } from 'node-firebird-driver/dist/lib/impl';
+import { TransactionOptions } from '@knagyorg/node-firebird-driver';
+import { AbstractTransaction } from '@knagyorg/node-firebird-driver/dist/lib/impl';
 
-import * as fb from 'node-firebird-native-api';
+import * as fb from '@knagyorg/node-firebird-native-api';
 
 
 /** Transaction implementation. */

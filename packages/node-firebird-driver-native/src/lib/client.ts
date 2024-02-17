@@ -4,15 +4,15 @@ import {
 	Client,
 	ConnectOptions,
 	CreateDatabaseOptions
-} from 'node-firebird-driver';
+} from '@knagyorg/node-firebird-driver';
 
-import { AbstractClient } from 'node-firebird-driver/dist/lib/impl';
+import { AbstractClient } from '@knagyorg/node-firebird-driver/dist/lib/impl';
 
-import * as fb from 'node-firebird-native-api';
+import * as fb from '@knagyorg/node-firebird-native-api';
 
 
 /** Gets the default platform Firebird client library filename. */
-export { getDefaultLibraryFilename } from 'node-firebird-native-api';
+export { getDefaultLibraryFilename } from '@knagyorg/node-firebird-native-api';
 
 /** Creates a client for a given library filename. */
 export function createNativeClient(library: string): Client {

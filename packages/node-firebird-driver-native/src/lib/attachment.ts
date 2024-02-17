@@ -8,14 +8,15 @@ import { createDpb } from './fb-util';
 import {
 	Blob,
 	ConnectOptions,
+	CreateBlobOptions,
 	CreateDatabaseOptions,
 	PrepareOptions,
 	TransactionOptions
-} from 'node-firebird-driver';
+} from '@knagyorg/node-firebird-driver';
 
-import { AbstractAttachment } from 'node-firebird-driver/dist/lib/impl';
+import { AbstractAttachment, cancelType } from '@knagyorg/node-firebird-driver/dist/lib/impl';
 
-import * as fb from 'node-firebird-native-api';
+import * as fb from '@knagyorg/node-firebird-native-api';
 
 
 /** Attachment implementation. */
@@ -57,13 +58,25 @@ export class AttachmentImpl extends AbstractAttachment {
 		this.attachmentHandle = undefined;
 	}
 
+	/** Enable/disable cancellation of operations in this attachment. */
+	protected async internalEnableCancellation(enable: boolean): Promise<void> {
+		await this.client.statusAction(status =>
+			this.attachmentHandle!.cancelOperationAsync(status, (enable ? cancelType.enable : cancelType.disable)));
+	}
+
+	/** Cancel a running operation in this attachment. */
+	protected async internalCancelOperation(forcibleAbort: boolean): Promise<void> {
+		await this.client.statusAction(status =>
+			this.attachmentHandle!.cancelOperationAsync(status, (forcibleAbort ? cancelType.abort : cancelType.raise)));
+	}
+
 	/** Starts a new transaction. */
 	protected async internalStartTransaction(options?: TransactionOptions): Promise<TransactionImpl> {
 		return await TransactionImpl.start(this, options);
 	}
 
-	protected async internalCreateBlob(transaction: TransactionImpl): Promise<BlobStreamImpl> {
-		return await BlobStreamImpl.create(this, transaction);
+	protected async internalCreateBlob(transaction: TransactionImpl, options?: CreateBlobOptions): Promise<BlobStreamImpl> {
+		return await BlobStreamImpl.create(this, transaction, options);
 	}
 
 	protected async internalOpenBlob(transaction: TransactionImpl, blob: Blob): Promise<BlobStreamImpl> {

@@ -6,9 +6,9 @@ import {
 	ExecuteOptions,
 	ExecuteQueryOptions,
 	PrepareOptions
-} from 'node-firebird-driver';
+} from '@knagyorg/node-firebird-driver';
 
-import { AbstractStatement, commonInfo, getPortableInteger, statementInfo } from 'node-firebird-driver/dist/lib/impl';
+import { AbstractStatement, commonInfo, getPortableInteger, statementInfo } from '@knagyorg/node-firebird-driver/dist/lib/impl';
 
 import {
 	createDataReader,
@@ -19,7 +19,7 @@ import {
 	DataWriter
 } from './fb-util';
 
-import * as fb from 'node-firebird-native-api';
+import * as fb from '@knagyorg/node-firebird-native-api';
 
 import { TextDecoder } from 'util';
 
