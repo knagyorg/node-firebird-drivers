@@ -1,6 +1,6 @@
 {
   "name": "@knagyorg/node-firebird-driver",
-  "version": "3.2.0",
+  "version": "3.2.2",
   "description": "Firebird Driver Interfaces for Node.js",
   "main": "dist/lib/index.js",
   "scripts": {
@@ -30,6 +30,6 @@
   "homepage": "https://github.com/asfernandes/node-firebird-drivers#readme",
   "typings": "./dist/lib/index.d.ts",
   "dependencies": {
-    "@types/node": "^20.14.2"
+    "@types/node": "^22.7.5"
   }
 }
